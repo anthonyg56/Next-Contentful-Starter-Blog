@@ -4,6 +4,7 @@ import { createClient, CreateClientParams, Entry } from 'contentful'
 import { documentToReactComponents } from '@contentful/rich-text-react-renderer'
 import { TypeReciepe, TypeRecipeFields } from "../../@types";
 import { Document } from "@contentful/rich-text-types"
+import Skeleton from '../../components/Skeleton';
 
 const contentfulConfig: CreateClientParams = {
   accessToken: "bafc9e682b9f9703341a15d4a66782fc4e99f3c901e6406238c5f17e5afe5363",
@@ -13,6 +14,8 @@ const client = createClient(contentfulConfig)
 
 // Recipes details page component
 const RecipeDetails: NextPage<PageProps> = ({ recipe }) => {
+  if (!recipe) return <Skeleton />
+
   const {
     cookingTime,
     featuredImage,
@@ -21,8 +24,6 @@ const RecipeDetails: NextPage<PageProps> = ({ recipe }) => {
     thumbnail,
     title
   } = recipe.fields
-
-  console.log(method)
 
   const ingredientsList = ingredients ? ingredients.map(ingredient => (
     <li key={ingredient}>{ingredient}</li>
@@ -97,7 +98,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 
   return {
     paths,
-    fallback: false,
+    fallback: true,
   }
 }
 
@@ -109,6 +110,14 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
   const res = await client.getEntries<TypeRecipeFields>({ content_type: 'recipe', 'fields.slug': params.slug })
 
+  if (!res.items.length) {
+    return {
+      redirect: {
+        destination: '/',
+        permanent: false
+      }
+    }
+  }
   return {
     props: {
       recipe: res.items[0]
